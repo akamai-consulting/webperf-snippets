@@ -1,3 +1,5 @@
+
+
 <div style="margin-bottom: 1ch">
     <img src="https://github.com/nucliweb/webperf-snippets/assets/1307927/f47f3049-34f5-407c-896a-d26a30ddf344" alt"WebPerf Snippets">
 </div>
@@ -7,6 +9,7 @@ A curated list of snippets to get Web Performance metrics to use in the browser 
 ![Chrome DevTools](https://github.com/nucliweb/webperf-snippets/assets/1307927/0d7bb9c8-5f21-47c6-90c5-2707a430dacb)
 
 ## Add snippet to Chrome DevTools
+
 
 You can use the webperf-snippets as a Snippet in the Chrome DevTools Sources tab.
 
@@ -27,6 +30,8 @@ https://github.com/nucliweb/webperf-snippets/assets/1307927/2987a2ca-3eef-4b73-8
 <details>
     <summary>Table of Contents</summary>
 
+- [Add snippet to Chrome DevTools](#add-snippet-to-chrome-devtools)
+- [Video](#video)
 - [Core Web Vitals](#core-web-vitals)
   - [Largest Contentful Paint (LCP)](#largest-contentful-paint-lcp)
   - [Largest Contentful Paint Sub-Parts (LCP)](#largest-contentful-paint-sub-parts-lcp)
@@ -48,6 +53,7 @@ https://github.com/nucliweb/webperf-snippets/assets/1307927/2987a2ca-3eef-4b73-8
   - [Inline CSS Info and Size](#inline-css-info-and-size)
   - [Get your `<head>` in order](#get-your-head-in-order)
     - [e.g. web.dev](#eg-webdev)
+  - [Event Processing Time](#event-processing-time)
 - [Interaction](#interaction)
   - [Long Task](#long-task)
   - [Layout Shifts](#layout-shifts)
@@ -291,7 +297,7 @@ console.table(scriptsLoading);
 
 ### Resources hints
 
-Check is the page has resources hints
+Check if the page has resources hints
 
 ```js
 const rels = [
@@ -337,11 +343,14 @@ console.log(findATFLazyLoadedImages());
 List all images that don't have `loading="lazy"` or `[data-src]` _(lazy loading via JS)_ and are not in the viewport when the page loads. This script will help you find candidates for lazy loading.
 
 ```js
+
 // Execute it after the page has loaded without any user interaction (Scroll, click, etc)
-function findImgCanidatesForLazyLoading() {
+function findImgCandidatesForLazyLoading() {
   let notLazyImages = document.querySelectorAll(
     'img:not([data-src]):not([loading="lazy"])'
   );
+
+  
   return Array.from(notLazyImages).filter((tag) => !isInViewport(tag));
 }
 
@@ -355,10 +364,10 @@ function isInViewport(tag) {
   );
 }
 
-console.log(
-  "Consider lazyloading the following images: ",
-  findImgCanidatesForLazyLoading()
-);
+// easier to view important data using console.table. use array to define what to show in console output.
+
+console.table(findImgCandidatesForLazyLoadingidatesForLazyLoading(), ["src", "alt", "loading", "fetchPriority", "decoding"])
+
 ```
 
 ### Find render-blocking resources
@@ -662,6 +671,7 @@ timingOptions.forEach((timing) => {
 
 console.table(calculateTimings("first", "REQ_START_UNTIL_RES_END"));
 ```
+
 ### Inline Script Info and Size
 
 Find all inline scripts on the page and list the scripts and count. Find the total byte size of all the inline scripts in the console.
@@ -777,6 +787,52 @@ Use [capo.js](https://github.com/rviscomi/capo.js) the [Rick Viscomi](https://gi
 #### e.g. web.dev
 
 <img width="842" alt="image" src="https://github.com/rviscomi/capo.js/assets/1120896/fe6bb67c-697a-4fdf-aa28-52429239fcf5">
+
+
+### Event Processing Time
+
+Find the process time it took for events to finish.
+
+```javascript
+
+// list events to calculate processing time
+
+const events = new Map([
+  ["connectTime", { start: "connectStart", end: "connectEnd" }],
+  ["domainLookupTime", { start: "domainLookupStart", end: "domainLookupEnd" }],
+  [
+    "DOMContentLoaded",
+    { start: "domContentLoadedEventStart", end: "domContentLoadedEventEnd" }
+  ],
+
+  ["onload", { start: "loadEventStart", end: "loadEventEnd" }]
+]);
+
+const observer = new PerformanceObserver((list) => {
+  const displayTimes = [];
+  list.getEntries().forEach((entry) => {
+    console.log(entry);
+    for (const [key, value] of events) {
+      const endValue = entry[value.end];
+      const startValue = entry[value.start];
+
+      const eventTime = endValue - startValue;
+
+      displayTimes.push({
+        url: entry.name,
+        event: key,
+        processingTime: `${eventTime.toFixed(2)} ms`
+      });
+    }
+  });
+
+  console.table(displayTimes);
+});
+
+observer.observe({ type: "navigation", buffered: true });
+
+```
+
 
 ## Interaction
 
